@@ -49,8 +49,8 @@ public class BookDetailsFragment extends Fragment {
         title = view.findViewById(R.id.titleDisplay);
         author = view.findViewById(R.id.authorDisplay);
 
-        title.setTextSize(22);
-        author.setTextSize(18);
+        title.setTextSize(26);
+        author.setTextSize(20);
 
         title.setGravity(Gravity.CENTER);
         author.setGravity(Gravity.CENTER);
