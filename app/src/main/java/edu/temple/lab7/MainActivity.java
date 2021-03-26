@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
 
         bookList = new BookList();
 
+        // Populate bookList with books
         for (int i = 0; i < Arrays.asList(getResources().getStringArray(R.array.book_titles)).size(); i++) {
             String title = Arrays.asList(getResources().getStringArray(R.array.book_titles)).get(i);
             String author = Arrays.asList(getResources().getStringArray(R.array.book_authors)).get(i);
