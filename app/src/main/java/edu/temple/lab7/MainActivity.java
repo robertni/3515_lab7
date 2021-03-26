@@ -4,16 +4,21 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements BookListFragment.BookListFragmentInterface {
 
+    Book book;
     BookList bookList;
     boolean moreSpace;
+
     BookDetailsFragment bdFragment;
+
+    private static final String DESC_BOOK = "";
+
+    private static int position;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,25 +35,53 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             bookList.addBook(book);
         }
 
-        getSupportFragmentManager()
-                .beginTransaction()
-                .add(R.id.container_1, BookListFragment.newInstance(bookList))
-                .addToBackStack(null)
-                .commit();
-
-
-        if (moreSpace) {
-            bdFragment = new BookDetailsFragment();
+        if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container_2, bdFragment)
+                    .replace(R.id.container_1, BookListFragment.newInstance(bookList))
+                    .addToBackStack(null)
                     .commit();
+
+            if (moreSpace) {
+                bdFragment = new BookDetailsFragment();
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.container_2, bdFragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        } else {
+            book = savedInstanceState.getParcelable(DESC_BOOK);
+
+            if (book != null) {
+                if (!moreSpace) {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.container_1, BookDetailsFragment.newInstance(book))
+                            .addToBackStack(null)
+                            .commit();
+                } else {
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.container_1, BookListFragment.newInstance(bookList))
+                            .addToBackStack(null)
+                            .commit();
+
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.container_2, BookDetailsFragment.newInstance(book))
+                            .addToBackStack(null)
+                            .commit();
+                }
+            }
+
         }
     }
 
 
     @Override
     public void itemClicked(int position) {
+        this.position = position;
         if (!moreSpace) {
             getSupportFragmentManager()
                     .beginTransaction()
@@ -56,7 +89,22 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                     .addToBackStack(null)
                     .commit();
         } else {
-            bdFragment.displayBook(bookList.getBook(position));
+            if (bdFragment != null) {
+                bdFragment.displayBook(bookList.getBook(position));
+            } else {
+                bdFragment = new BookDetailsFragment();
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.container_2, bdFragment.newInstance(bookList.getBook(position)))
+                        .addToBackStack(null)
+                        .commit();
+            }
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(DESC_BOOK, bookList.getBook(position));
     }
 }
