@@ -11,100 +11,102 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     Book book;
     BookList bookList;
-    boolean moreSpace;
+    boolean landscape;
 
     BookDetailsFragment bdFragment;
 
     private static final String DESC_BOOK = "";
-
-    private static int position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        moreSpace = findViewById(R.id.container_2) != null;
+        // check if container_2 is present
+        landscape = findViewById(R.id.container_2) != null;
 
+        // initialize bookList
         bookList = new BookList();
 
-        for (int i = 0; i < Arrays.asList(getResources().getStringArray(R.array.book_titles)).size(); i++) {
+        int size = 0;
+        if ((Arrays.asList(getResources().getStringArray(R.array.book_titles)).size()) == (Arrays.asList(getResources().getStringArray(R.array.book_authors)).size())) {
+            size = Arrays.asList(getResources().getStringArray(R.array.book_titles)).size();
+        }
+
+        for (int i = 0; i < size; i++) {
             String title = Arrays.asList(getResources().getStringArray(R.array.book_titles)).get(i);
             String author = Arrays.asList(getResources().getStringArray(R.array.book_authors)).get(i);
             Book book = new Book(title, author);
             bookList.addBook(book);
         }
 
-        if (savedInstanceState == null) {
+        bdFragment = new BookDetailsFragment();
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.container_1, BookListFragment.newInstance(bookList))
+                .addToBackStack(null)
+                .commit();
+
+        // check if landscape or tablet
+        if (landscape) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container_1, BookListFragment.newInstance(bookList))
+                    .replace(R.id.container_2, bdFragment)
                     .addToBackStack(null)
                     .commit();
+        }
 
-            if (moreSpace) {
-                bdFragment = new BookDetailsFragment();
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.container_2, bdFragment)
-                        .addToBackStack(null)
-                        .commit();
-            }
-        } else {
+        // check if anything was saved
+        if (savedInstanceState != null) {
             book = savedInstanceState.getParcelable(DESC_BOOK);
 
             if (book != null) {
-                if (!moreSpace) {
+                if (landscape) {
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .replace(R.id.container_1, BookDetailsFragment.newInstance(book))
+                            .replace(R.id.container_2, bdFragment.newInstance(book))
                             .addToBackStack(null)
                             .commit();
                 } else {
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .replace(R.id.container_1, BookListFragment.newInstance(bookList))
-                            .addToBackStack(null)
-                            .commit();
-
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.container_2, BookDetailsFragment.newInstance(book))
+                            .replace(R.id.container_1, bdFragment.newInstance(book))
                             .addToBackStack(null)
                             .commit();
                 }
             }
-
         }
     }
 
-
     @Override
     public void itemClicked(int position) {
-        this.position = position;
-        if (!moreSpace) {
+        this.book = bookList.getBook(position);
+
+        if (landscape) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container_1, BookDetailsFragment.newInstance(bookList.getBook(position)))
+                    .replace(R.id.container_2, bdFragment.newInstance(book))
                     .addToBackStack(null)
                     .commit();
         } else {
-            if (bdFragment != null) {
-                bdFragment.displayBook(bookList.getBook(position));
-            } else {
-                bdFragment = new BookDetailsFragment();
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.container_2, bdFragment.newInstance(bookList.getBook(position)))
-                        .addToBackStack(null)
-                        .commit();
-            }
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.container_1, bdFragment.newInstance(book))
+                    .addToBackStack(null)
+                    .commit();
         }
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable(DESC_BOOK, bookList.getBook(position));
+        outState.putParcelable(DESC_BOOK, book);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        this.book = null;
     }
 }
