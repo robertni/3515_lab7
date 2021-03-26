@@ -13,6 +13,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     BookList bookList;
     boolean landscape;
 
+    BookListFragment blFragment;
     BookDetailsFragment bdFragment;
 
     private static final String DESC_BOOK = "";
@@ -40,38 +41,60 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             bookList.addBook(book);
         }
 
-        bdFragment = new BookDetailsFragment();
-
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.container_1, BookListFragment.newInstance(bookList))
-                .addToBackStack(null)
-                .commit();
-
-        // check if landscape or tablet
-        if (landscape) {
+        if (savedInstanceState == null) {
+            blFragment = new BookListFragment().newInstance(bookList);
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container_2, bdFragment)
+                    .replace(R.id.container_1, blFragment)
                     .addToBackStack(null)
                     .commit();
-        }
 
-        // check if anything was saved
-        if (savedInstanceState != null) {
+            if (landscape) {
+                bdFragment = new BookDetailsFragment().newInstance(null);
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.container_2, bdFragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        } else {
             book = savedInstanceState.getParcelable(DESC_BOOK);
+
+            System.out.println("saved book: " + book.getTitle() + " by " + book.getAuthor());
 
             if (book != null) {
                 if (landscape) {
+                    if (blFragment == null) {
+                        blFragment = BookListFragment.newInstance(bookList);
+                    }
+
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .replace(R.id.container_2, bdFragment.newInstance(book))
+                            .replace(R.id.container_1, blFragment)
+                            .addToBackStack(null)
+                            .commit();
+
+                    if (bdFragment == null) {
+                        bdFragment = BookDetailsFragment.newInstance(book);
+                    } else {
+                        bdFragment.displayBook(book);
+                    }
+
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.container_2, bdFragment)
                             .addToBackStack(null)
                             .commit();
                 } else {
+                    if (bdFragment == null) {
+                        bdFragment = BookDetailsFragment.newInstance(book);
+                    } else {
+                        bdFragment.displayBook(book);
+                    }
+
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .replace(R.id.container_1, bdFragment.newInstance(book))
+                            .replace(R.id.container_1, bdFragment)
                             .addToBackStack(null)
                             .commit();
                 }
@@ -84,15 +107,16 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         this.book = bookList.getBook(position);
 
         if (landscape) {
-            getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.container_2, bdFragment.newInstance(book))
-                    .addToBackStack(null)
-                    .commit();
+            if (bdFragment == null) {
+                bdFragment = BookDetailsFragment.newInstance(book);
+            } else {
+                bdFragment.displayBook(book);
+            }
         } else {
+            BookDetailsFragment bookDetailsFragment = new BookDetailsFragment();
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.container_1, bdFragment.newInstance(book))
+                    .replace(R.id.container_1, bookDetailsFragment.newInstance(book))
                     .addToBackStack(null)
                     .commit();
         }
@@ -102,11 +126,5 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(DESC_BOOK, book);
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        this.book = null;
     }
 }
