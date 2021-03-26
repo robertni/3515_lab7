@@ -26,5 +26,10 @@ public class MainActivity extends AppCompatActivity {
             Book book = new Book(title, author);
             bookList.addBook(book);
         }
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.container_1, BookListFragment.newInstance(bookList))
+                .commit();
     }
 }
