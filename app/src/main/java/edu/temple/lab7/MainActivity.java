@@ -2,18 +2,20 @@ package edu.temple.lab7;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
 
 import android.os.Bundle;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements BookListFragment.BookListFragmentInterface {
 
     Book book;
-    BookList bookList;
     boolean landscape;
 
-    BookListFragment blFragment;
+    FragmentManager fragmentManager;
+
     BookDetailsFragment bdFragment;
 
     private static final String DESC_BOOK = "";
@@ -23,100 +25,73 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // check if container_2 is present
+        // check if landscape/tablet
         landscape = findViewById(R.id.container_2) != null;
 
-        // initialize bookList
-        bookList = new BookList();
+        fragmentManager = getSupportFragmentManager();
 
-        int size = 0;
-        if ((Arrays.asList(getResources().getStringArray(R.array.book_titles)).size()) == (Arrays.asList(getResources().getStringArray(R.array.book_authors)).size())) {
-            size = Arrays.asList(getResources().getStringArray(R.array.book_titles)).size();
+        // check if there is a saved book
+        if (savedInstanceState != null) {
+            book = savedInstanceState.getParcelable(DESC_BOOK);
         }
 
-        for (int i = 0; i < size; i++) {
-            String title = Arrays.asList(getResources().getStringArray(R.array.book_titles)).get(i);
-            String author = Arrays.asList(getResources().getStringArray(R.array.book_authors)).get(i);
-            Book book = new Book(title, author);
-            bookList.addBook(book);
-        }
-
-        if (savedInstanceState == null) {
-            blFragment = new BookListFragment().newInstance(bookList);
-            getSupportFragmentManager()
+        // display BookList in container 1
+        if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
+            fragmentManager.popBackStack();
+        } else {
+            fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container_1, blFragment)
-                    .addToBackStack(null)
+                    .replace(R.id.container_1, BookListFragment.newInstance(getBookList()))
                     .commit();
+        }
 
-            if (landscape) {
-                bdFragment = new BookDetailsFragment().newInstance(null);
-                getSupportFragmentManager()
+        // if book == null is true, it will create a new BookDetailsFragment
+        // else it will create a new instance displaying the selected book
+        bdFragment = (book == null) ? new BookDetailsFragment() : BookDetailsFragment.newInstance(book);
+
+        if (landscape) {
+            fragmentManager
+                    .beginTransaction()
+                    .replace(R.id.container_2, bdFragment)
+                    .commit();
+        } else {
+            if (book != null) {
+                fragmentManager
                         .beginTransaction()
-                        .replace(R.id.container_2, bdFragment)
+                        .replace(R.id.container_1, bdFragment)
                         .addToBackStack(null)
                         .commit();
-            }
-        } else {
-            book = savedInstanceState.getParcelable(DESC_BOOK);
-
-            System.out.println("saved book: " + book.getTitle() + " by " + book.getAuthor());
-
-            if (book != null) {
-                if (landscape) {
-                    if (blFragment == null) {
-                        blFragment = BookListFragment.newInstance(bookList);
-                    }
-
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.container_1, blFragment)
-                            .addToBackStack(null)
-                            .commit();
-
-                    if (bdFragment == null) {
-                        bdFragment = BookDetailsFragment.newInstance(book);
-                    } else {
-                        bdFragment.displayBook(book);
-                    }
-
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.container_2, bdFragment)
-                            .addToBackStack(null)
-                            .commit();
-                } else {
-                    if (bdFragment == null) {
-                        bdFragment = BookDetailsFragment.newInstance(book);
-                    } else {
-                        bdFragment.displayBook(book);
-                    }
-
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.container_1, bdFragment)
-                            .addToBackStack(null)
-                            .commit();
-                }
             }
         }
     }
 
+    private BookList getBookList() {
+        // create a new BookList
+        BookList books = new BookList();
+
+        // get book titles and authors
+        ArrayList<String> title = new ArrayList<String>(Arrays.asList(getResources().getStringArray(R.array.book_titles)));
+        ArrayList<String> author = new ArrayList<String>(Arrays.asList(getResources().getStringArray(R.array.book_authors)));
+
+        // add books into the BookList
+        for (int i = 0; i < 10; i++) {
+            books.addBook(new Book(title.get(i), author.get(i)));
+        }
+
+        // return the BookList back to caller
+        return books;
+    }
+
     @Override
     public void itemClicked(int position) {
-        this.book = bookList.getBook(position);
+        book = getBookList().getBook(position);
 
         if (landscape) {
-            if (bdFragment == null) {
-                bdFragment = BookDetailsFragment.newInstance(book);
-            } else {
-                bdFragment.displayBook(book);
-            }
+            bdFragment.displayBook(book);
         } else {
-            BookDetailsFragment bookDetailsFragment = new BookDetailsFragment();
-            getSupportFragmentManager()
+            fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container_1, bookDetailsFragment.newInstance(book))
+                    .replace(R.id.container_1, BookDetailsFragment.newInstance(book))
                     .addToBackStack(null)
                     .commit();
         }
@@ -126,5 +101,11 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(DESC_BOOK, book);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        book = null;
     }
 }
