@@ -1,4 +1,4 @@
-package edu.temple.lab7;
+package edu.temple.lab8;
 
 import android.os.Bundle;
 
@@ -9,8 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
-
-import java.util.ArrayList;
 
 public class BookListFragment extends Fragment {
 

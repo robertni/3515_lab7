@@ -1,4 +1,4 @@
-package edu.temple.lab7;
+package edu.temple.lab8;
 
 import android.os.Parcel;
 import android.os.Parcelable;
