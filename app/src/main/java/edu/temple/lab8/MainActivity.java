@@ -68,16 +68,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     private BookList getBookList() {
         // create a new BookList
         BookList books = new BookList();
-
-        // get book titles and authors
-        ArrayList<String> title = new ArrayList<String>(Arrays.asList(getResources().getStringArray(R.array.book_titles)));
-        ArrayList<String> author = new ArrayList<String>(Arrays.asList(getResources().getStringArray(R.array.book_authors)));
-
-        // add books into the BookList
-        for (int i = 0; i < 10; i++) {
-            books.addBook(new Book(title.get(i), author.get(i)));
-        }
-
         // return the BookList back to caller
         return books;
     }
