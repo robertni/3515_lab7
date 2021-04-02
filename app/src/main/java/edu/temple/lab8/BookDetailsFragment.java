@@ -4,10 +4,10 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class BookDetailsFragment extends Fragment {
@@ -19,6 +19,7 @@ public class BookDetailsFragment extends Fragment {
 
     TextView title;
     TextView author;
+    ImageView cover;
 
     public BookDetailsFragment() {
         // Required empty public constructor
@@ -48,12 +49,7 @@ public class BookDetailsFragment extends Fragment {
 
         title = view.findViewById(R.id.titleDisplay);
         author = view.findViewById(R.id.authorDisplay);
-
-        title.setTextSize(26);
-        author.setTextSize(20);
-
-        title.setGravity(Gravity.CENTER);
-        author.setGravity(Gravity.CENTER);
+        cover = view.findViewById(R.id.cover);
 
         if (book != null) {
             displayBook(book);
