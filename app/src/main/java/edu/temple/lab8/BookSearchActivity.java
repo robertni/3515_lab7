@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
@@ -39,10 +38,8 @@ public class BookSearchActivity extends DialogFragment {
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         LayoutInflater inflater = requireActivity().getLayoutInflater();
-
         View view = inflater.inflate(R.layout.activity_book_search, null);
         editText = view.findViewById(R.id.searchEditText);
-
         requestQueue = Volley.newRequestQueue(context);
 
         builder.setView(view)
@@ -57,22 +54,21 @@ public class BookSearchActivity extends DialogFragment {
                                 for (int i = 0; i < response.length(); i++) {
                                     try {
                                         JSONObject jsonObject = response.getJSONObject(i);
-
                                         int id = Integer.parseInt(jsonObject.getString("id"));
                                         String title = jsonObject.getString("title");
                                         String author = jsonObject.getString("author");
                                         String cover_url = jsonObject.getString("cover_url");
-
                                         books.addBook(new Book(id, title, author, cover_url));
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
                                 }
+                                listener.onDialogPositiveClick(BookSearchActivity.this, books);
                             }
                         }, new Response.ErrorListener() {
                             @Override
                             public void onErrorResponse(VolleyError error) {
-                                Log.e("JsonArrayRequest", error.toString());
+                                System.out.println(error);
                             }
                         });
                         requestQueue.add(jsonArrayRequest);
@@ -87,9 +83,12 @@ public class BookSearchActivity extends DialogFragment {
         return builder.create();
     }
 
+
+
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
+        this.context = context;
         try {
             listener = (BSListenerInterface) context;
         } catch (ClassCastException e) {
