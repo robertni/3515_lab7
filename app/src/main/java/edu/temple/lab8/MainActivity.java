@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     BookList books;
     Book book;
 
-    boolean space;
+    boolean landscape;
 
     FragmentManager fragmentManager;
 
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         Button button = findViewById(R.id.button);
 
         // check if landscape/tablet
-        space = findViewById(R.id.container_2) != null;
+        landscape = findViewById(R.id.container_2) != null;
 
         fragmentManager = getSupportFragmentManager();
 
@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         // else it will create a new instance displaying the selected book
         bdFragment = (book == null) ? new BookDetailsFragment() : BookDetailsFragment.newInstance(book);
 
-        if (space) {
+        if (landscape) {
             fragmentManager
                     .beginTransaction()
                     .replace(R.id.container_2, bdFragment)
@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     @Override
     public void itemClicked(int position) {
         this.book = books.getBook(position);
-        if (space) {
+        if (landscape) {
             bdFragment.displayBook(book);
         } else {
             fragmentManager
@@ -133,21 +133,24 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     // BSListenerInterface
     @Override
-    public void onDialogPositiveClick(DialogFragment dialog, BookList books) {
-        this.books = books;
+    public void onDialogPositiveClick(DialogFragment dialog, BookList bookList) {
+        books = bookList;
         if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
             fragmentManager.popBackStack();
-        } else {
-            fragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container_1, BookListFragment.newInstance(books))
-                    .commit();
+        }
+        fragmentManager
+                .beginTransaction()
+                .replace(R.id.container_1, BookListFragment.newInstance(books))
+                .commit();
+
+        if (!landscape) {
+            book = null;
         }
     }
 
     @Override
     public void onDialogNegativeClick(DialogFragment dialog) {
-
+        // cancel clicked - do nothing
     }
 
     @Override

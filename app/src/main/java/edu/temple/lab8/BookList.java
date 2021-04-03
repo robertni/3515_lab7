@@ -49,18 +49,6 @@ public class BookList implements Parcelable {
         return bookList;
     }
 
-    public void setBookList(ArrayList<Book> books) {
-        for (int i = 0; i < books.size(); i++) {
-            Book book = new Book(
-                    books.get(i).getId(),
-                    books.get(i).getTitle(),
-                    books.get(i).getAuthor(),
-                    books.get(i).getCoverURL()
-            );
-            bookList.add(book);
-        }
-    }
-
     @Override
     public int describeContents() {
         return 0;
