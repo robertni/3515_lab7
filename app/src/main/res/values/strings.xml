@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">BookShelf</string>
     <string name="content_description">Cover</string>
+    <string name="search_title">Book Search Activity</string>
+    <string name="search_hint">Enter a search term here</string>
+    <string name="cancel">Cancel</string>
+    <string name="search">Search</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

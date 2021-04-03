@@ -2,14 +2,17 @@ package edu.temple.lab8;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements BookListFragment.BookListFragmentInterface {
+public class MainActivity extends AppCompatActivity implements BookListFragment.BookListFragmentInterface, BookSearchActivity.BSListenerInterface {
 
     Book book;
     boolean landscape;
@@ -24,6 +27,8 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Button button = findViewById(R.id.button);
 
         // check if landscape/tablet
         landscape = findViewById(R.id.container_2) != null;
@@ -63,6 +68,14 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                         .commit();
             }
         }
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DialogFragment dialog = new BookSearchActivity();
+                dialog.show(getSupportFragmentManager(), "BookSearchActivity");
+            }
+        });
     }
 
     private BookList getBookList() {
@@ -72,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         return books;
     }
 
+    // BookListFragmentInterface
     @Override
     public void itemClicked(int position) {
         book = getBookList().getBook(position);
@@ -85,6 +99,17 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                     .addToBackStack(null)
                     .commit();
         }
+    }
+
+    // BSListenerInterface
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog, BookList books) {
+
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+
     }
 
     @Override
