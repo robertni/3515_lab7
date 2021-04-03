@@ -57,8 +57,8 @@ public class BookSearchActivity extends DialogFragment {
                                         int id = Integer.parseInt(jsonObject.getString("id"));
                                         String title = jsonObject.getString("title");
                                         String author = jsonObject.getString("author");
-                                        String cover_url = jsonObject.getString("cover_url");
-                                        books.addBook(new Book(id, title, author, cover_url));
+                                        String coverURL = jsonObject.getString("cover_url");
+                                        books.addBook(new Book(id, title, author, coverURL));
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }

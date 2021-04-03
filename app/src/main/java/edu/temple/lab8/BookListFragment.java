@@ -16,6 +16,7 @@ public class BookListFragment extends Fragment {
     private static final String ARG_LIST = "param1";
 
     private BookList bookList;
+    private BookAdapter adapter;
 
     public BookListFragment() {
         // Required empty public constructor
@@ -27,6 +28,16 @@ public class BookListFragment extends Fragment {
         args.putParcelable(ARG_LIST, bookList);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    public void update(BookList books) {
+        System.out.println("*** BookListFragment update called ***");
+        bookList = books;
+        adapter.notifyDataSetChanged();
+
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_LIST, bookList);
+        this.setArguments(args);
     }
 
     @Override
@@ -45,7 +56,7 @@ public class BookListFragment extends Fragment {
         // Inflate the layout for this fragment
         ListView listView = (ListView) inflater.inflate(R.layout.fragment_book_list, container, false);
 
-        BookAdapter adapter = new BookAdapter(getActivity(), bookList);
+        adapter = new BookAdapter(getActivity(), bookList);
 
         listView.setAdapter(adapter);
 

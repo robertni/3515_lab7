@@ -3,6 +3,7 @@ package edu.temple.lab8;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import android.os.Bundle;
@@ -49,7 +50,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         fragmentManager = getSupportFragmentManager();
 
-        // check if there is a saved book
+        // check if there is a saved book and booklist
         if (savedInstanceState != null) {
             if (savedInstanceState.getString(SAVED_BOOK) != null) {
                 String json = savedInstanceState.getString(SAVED_BOOK);
@@ -111,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             @Override
             public void onClick(View v) {
                 DialogFragment dialog = new BookSearchActivity();
-                dialog.show(getSupportFragmentManager(), "BookSearchActivity");
+                dialog.show(fragmentManager, "BookSearchActivity");
             }
         });
     }
@@ -135,17 +136,24 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, BookList bookList) {
         books = bookList;
+
         if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
             fragmentManager.popBackStack();
         }
+
+        if (blFragment != null) {
+            blFragment.update(books);
+        } else {
+            blFragment = BookListFragment.newInstance(books);
+        }
+
         fragmentManager
                 .beginTransaction()
-                .replace(R.id.container_1, BookListFragment.newInstance(books))
+                .replace(R.id.container_1, blFragment)
                 .commit();
 
-        if (!landscape) {
-            book = null;
-        }
+        // when a new search occurs, set book to null
+        book = null;
     }
 
     @Override
