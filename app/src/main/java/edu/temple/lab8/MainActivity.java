@@ -34,11 +34,13 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     FragmentManager fragmentManager;
 
+    BookListFragment blFragment;
     BookDetailsFragment bdFragment;
 
     RequestQueue requestQueue;
 
-    private static final String DESC_BOOK = "";
+    private static final String SAVED_BOOK = "";
+    private static final String SAVED_BOOKLIST = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,10 +56,22 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         // check if there is a saved book
         if (savedInstanceState != null) {
-            book = savedInstanceState.getParcelable(DESC_BOOK);
+            book = savedInstanceState.getParcelable(SAVED_BOOK);
+            if (savedInstanceState.getParcelableArrayList(SAVED_BOOKLIST) != null) {
+                books = new BookList();
+                ArrayList<Book> bookList = savedInstanceState.getParcelableArrayList(SAVED_BOOKLIST);
+                for (int i = 0; i < bookList.size(); i++) {
+                    books.addBook(new Book(
+                            bookList.get(i).getId(),
+                            bookList.get(i).getTitle(),
+                            bookList.get(i).getAuthor(),
+                            bookList.get(i).getCoverURL()
+                    ));
+                }
+            }
         }
 
-        books = new BookList();
+        blFragment = (books == null) ? BookListFragment.newInstance(getBookList()) : BookListFragment.newInstance(books);
 
         // display BookList in container 1
         if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
@@ -65,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         } else {
             fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container_1, BookListFragment.newInstance(getBookList()))
+                    .replace(R.id.container_1, blFragment)
                     .commit();
         }
 
@@ -183,7 +197,8 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelable(DESC_BOOK, book);
+        outState.putParcelable(SAVED_BOOK, book);
+        outState.putParcelableArrayList(SAVED_BOOKLIST, books.getBookList());
     }
 
     @Override
