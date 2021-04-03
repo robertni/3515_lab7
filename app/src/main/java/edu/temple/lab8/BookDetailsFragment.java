@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.squareup.picasso.Picasso;
+
 public class BookDetailsFragment extends Fragment {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -62,5 +64,6 @@ public class BookDetailsFragment extends Fragment {
     public void displayBook(Book book) {
         title.setText(book.getTitle());
         author.setText(book.getAuthor());
+        Picasso.get().load(book.getCoverURL()).into(cover);
     }
 }
