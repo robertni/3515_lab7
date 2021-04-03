@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             fragmentManager.popBackStack();
         }
 
-        if (blFragment != null) {
+        if (blFragment != null && blFragment instanceof BookListFragment) {
             blFragment.update(books);
         } else {
             blFragment = BookListFragment.newInstance(books);
@@ -171,9 +171,11 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         JSONObject book = bookToJson(this.book);
-        JSONArray books = bookListToJson(this.books);
         outState.putString(SAVED_BOOK, book.toString());
-        outState.putString(SAVED_BOOKLIST, books.toString());
+        if (books != null) {
+            JSONArray books = bookListToJson(this.books);
+            outState.putString(SAVED_BOOKLIST, books.toString());
+        }
     }
 
     private BookList getBookList() {

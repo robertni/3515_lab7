@@ -33,7 +33,7 @@ public class BookListFragment extends Fragment {
     public void update(BookList books) {
         System.out.println("*** BookListFragment update called ***");
         bookList = books;
-        adapter.notifyDataSetChanged();
+        adapter.update(bookList);
 
         Bundle args = new Bundle();
         args.putParcelable(ARG_LIST, bookList);

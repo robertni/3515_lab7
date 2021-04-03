@@ -17,6 +17,11 @@ public class BookAdapter extends BaseAdapter {
         this.bookList = bookList;
     }
 
+    public void update(BookList books) {
+        bookList = books;
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getCount() {
         return bookList.getSize();
