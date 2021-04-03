@@ -3,6 +3,9 @@ package edu.temple.lab8;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Book implements Parcelable {
 
     private int id;
@@ -66,6 +69,19 @@ public class Book implements Parcelable {
 
     public void setCoverURL(String coverURL) {
         this.coverURL = coverURL;
+    }
+
+    public JSONObject getJSONObject() {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("id", id);
+            jsonObject.put("title", title);
+            jsonObject.put("author", author);
+            jsonObject.put("coverURL", coverURL);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject;
     }
 
     @Override
