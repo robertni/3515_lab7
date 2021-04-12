@@ -24,18 +24,18 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     BookList books;
     Book book;
-
     boolean landscape;
 
     FragmentManager fragmentManager;
-
-    BookListFragment blFragment;
     BookDetailsFragment bdFragment;
 
     RequestQueue requestQueue;
 
-    private static final String SAVED_BOOK = "Book";
-    private static final String SAVED_BOOKLIST = "BookList";
+    private final String TAG_BOOKDETAILS = "book";
+    private final String TAG_BOOKLIST = "booklist";
+
+    private final String SAVED_BOOK = "saved book";
+    private final String SAVED_BOOKLIST = "saved booklist";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,32 +51,12 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         // check if there is a saved book and booklist
         if (savedInstanceState != null) {
-            if (savedInstanceState.getString(SAVED_BOOK) != null) {
-                String json = savedInstanceState.getString(SAVED_BOOK);
-                try {
-                    JSONObject jsonObject = new JSONObject(json);
-                    book = new Book(
-                            jsonObject.getInt("id"),
-                            jsonObject.getString("title"),
-                            jsonObject.getString("author"),
-                            jsonObject.getString("coverURL")
-                    );
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (savedInstanceState.getString(SAVED_BOOKLIST) != null) {
-                String json = savedInstanceState.getString(SAVED_BOOKLIST);
-                try {
-                    JSONArray jsonArray = new JSONArray(json);
-                    books = JsonToBookList(jsonArray);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
+            book = savedInstanceState.getParcelable(SAVED_BOOK);
+            books = savedInstanceState.getParcelable(SAVED_BOOKLIST);
+        } else {
+            books = new BookList();
+            getBookList();
         }
-
-        blFragment = (books == null) ? BookListFragment.newInstance(getBookList()) : BookListFragment.newInstance(books);
 
         // display BookList in container 1
         if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
@@ -84,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         } else {
             fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container_1, blFragment)
+                    .replace(R.id.container_1, BookListFragment.newInstance(books), TAG_BOOKLIST)
                     .commit();
         }
 
@@ -95,13 +75,13 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         if (landscape) {
             fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container_2, bdFragment)
+                    .replace(R.id.container_2, bdFragment, TAG_BOOKDETAILS)
                     .commit();
         } else {
             if (book != null) {
                 fragmentManager
                         .beginTransaction()
-                        .replace(R.id.container_1, bdFragment)
+                        .replace(R.id.container_1, bdFragment, TAG_BOOKDETAILS)
                         .addToBackStack(null)
                         .commit();
             }
@@ -125,7 +105,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         } else {
             fragmentManager
                     .beginTransaction()
-                    .replace(R.id.container_1, BookDetailsFragment.newInstance(book))
+                    .replace(R.id.container_1, BookDetailsFragment.newInstance(book), TAG_BOOKDETAILS)
                     .addToBackStack(null)
                     .commit();
         }
@@ -134,24 +114,9 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     // BSListenerInterface
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, BookList bookList) {
+        books.clear();
         books = bookList;
-
-        if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
-            fragmentManager.popBackStack();
-        }
-
-        if (blFragment != null && blFragment instanceof BookListFragment) {
-            blFragment.update(books);
-        } else {
-            blFragment = BookListFragment.newInstance(books);
-        }
-
-        fragmentManager
-                .beginTransaction()
-                .replace(R.id.container_1, blFragment)
-                .commit();
-
-        // when a new search occurs, set book to null
+        showNewBookList();
         book = null;
     }
 
@@ -169,15 +134,11 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        JSONObject book = bookToJson(this.book);
-        outState.putString(SAVED_BOOK, book.toString());
-        if (books != null) {
-            JSONArray books = bookListToJson(this.books);
-            outState.putString(SAVED_BOOKLIST, books.toString());
-        }
+        outState.putParcelable(SAVED_BOOK, book);
+        outState.putParcelable(SAVED_BOOKLIST, books);
     }
 
-    private BookList getBookList() {
+    private void getBookList() {
         BookList books = new BookList();
         String url = "https://kamorris.com/lab/cis3515/search.php?term=";
         requestQueue = Volley.newRequestQueue(this);
@@ -188,18 +149,17 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 for (int i = 0; i < response.length(); i++) {
                     try {
                         JSONObject jsonObject = response.getJSONObject(i);
-
-                        int id = Integer.parseInt(jsonObject.getString("id"));
-                        String title = jsonObject.getString("title");
-                        String author = jsonObject.getString("author");
-                        String cover_url = jsonObject.getString("cover_url");
-
-                        books.addBook(new Book(id, title, author, cover_url));
+                        books.addBook(new Book(
+                                Integer.parseInt(jsonObject.getString("id")),
+                                jsonObject.getString("title"),
+                                jsonObject.getString("author"),
+                                jsonObject.getString("cover_url")
+                        ));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                    setBookList(books);
                 }
+                setBookList(books);
             }
         }, new Response.ErrorListener() {
             @Override
@@ -207,65 +167,18 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 System.out.println(error);
             }
         });
-
         requestQueue.add(jsonArrayRequest);
-
-        // return the BookList back to caller
-        return books;
     }
 
     private void setBookList(BookList books) {
         this.books = books;
-        if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
+        showNewBookList();
+    }
+
+    private void showNewBookList() {
+        if ((fragmentManager.findFragmentByTag(TAG_BOOKDETAILS)) instanceof BookDetailsFragment) {
             fragmentManager.popBackStack();
-        } else {
-            fragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container_1, BookListFragment.newInstance(books))
-                    .commit();
         }
-    }
-
-    private JSONObject bookToJson(Book book) {
-        JSONObject jsonObject = new JSONObject();
-        if (book != null) {
-            try {
-                jsonObject.put("id", book.getId());
-                jsonObject.put("title", book.getTitle());
-                jsonObject.put("author", book.getAuthor());
-                jsonObject.put("coverURL", book.getCoverURL());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-        return jsonObject;
-    }
-
-    private JSONArray bookListToJson(BookList books) {
-        JSONArray jsonArray = new JSONArray();
-        for (int i = 0; i < books.getSize(); i++) {
-            jsonArray.put(books.getBook(i).getJSONObject());
-        }
-        return jsonArray;
-    }
-
-    private BookList JsonToBookList(JSONArray books) {
-        BookList bookList = new BookList();
-        for (int i = 0; i < books.length(); i++) {
-            JSONObject jsonObject;
-            try {
-                jsonObject = books.getJSONObject(i);
-                Book book = new Book(
-                        jsonObject.getInt("id"),
-                        jsonObject.getString("title"),
-                        jsonObject.getString("author"),
-                        jsonObject.getString("coverURL")
-                );
-                bookList.addBook(book);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-        return bookList;
+        ((BookListFragment) fragmentManager.findFragmentByTag(TAG_BOOKLIST)).update(books);
     }
 }

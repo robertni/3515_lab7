@@ -71,19 +71,6 @@ public class Book implements Parcelable {
         this.coverURL = coverURL;
     }
 
-    public JSONObject getJSONObject() {
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("id", id);
-            jsonObject.put("title", title);
-            jsonObject.put("author", author);
-            jsonObject.put("coverURL", coverURL);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return jsonObject;
-    }
-
     @Override
     public int describeContents() {
         return 0;

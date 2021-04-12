@@ -29,6 +29,16 @@ public class BookList implements Parcelable {
         }
     };
 
+    public void clear() {
+        bookList.clear();
+    }
+
+    public void addAll(BookList books) {
+        for (int i = 0; i < books.getSize(); i++) {
+            bookList.add(books.getBook(i));
+        }
+    }
+
     public void addBook(Book book) {
         bookList.add(book);
     }
@@ -43,10 +53,6 @@ public class BookList implements Parcelable {
 
     public int getSize() {
         return bookList.size();
-    }
-
-    public ArrayList<Book> getBookList() {
-        return bookList;
     }
 
     @Override

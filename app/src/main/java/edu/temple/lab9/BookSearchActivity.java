@@ -54,11 +54,12 @@ public class BookSearchActivity extends DialogFragment {
                                 for (int i = 0; i < response.length(); i++) {
                                     try {
                                         JSONObject jsonObject = response.getJSONObject(i);
-                                        int id = Integer.parseInt(jsonObject.getString("id"));
-                                        String title = jsonObject.getString("title");
-                                        String author = jsonObject.getString("author");
-                                        String coverURL = jsonObject.getString("cover_url");
-                                        books.addBook(new Book(id, title, author, coverURL));
+                                        books.addBook(new Book(
+                                                Integer.parseInt(jsonObject.getString("id")),
+                                                jsonObject.getString("title"),
+                                                jsonObject.getString("author"),
+                                                jsonObject.getString("cover_url")
+                                        ));
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
