@@ -58,7 +58,8 @@ public class BookSearchActivity extends DialogFragment {
                                                 Integer.parseInt(jsonObject.getString("id")),
                                                 jsonObject.getString("title"),
                                                 jsonObject.getString("author"),
-                                                jsonObject.getString("cover_url")
+                                                jsonObject.getString("cover_url"),
+                                                Integer.parseInt(jsonObject.getString("duration"))
                                         ));
                                     } catch (JSONException e) {
                                         e.printStackTrace();

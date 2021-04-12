@@ -12,12 +12,14 @@ public class Book implements Parcelable {
     private String title;
     private String author;
     private String coverURL;
+    private int duration;
 
-    public Book(int id, String title, String author, String coverURL) {
+    public Book(int id, String title, String author, String coverURL, int duration) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.coverURL = coverURL;
+        this.duration = duration;
     }
 
     protected Book(Parcel in) {
@@ -25,6 +27,7 @@ public class Book implements Parcelable {
         title = in.readString();
         author = in.readString();
         coverURL = in.readString();
+
     }
 
     public static final Creator<Book> CREATOR = new Creator<Book>() {
@@ -71,6 +74,14 @@ public class Book implements Parcelable {
         this.coverURL = coverURL;
     }
 
+    public int getDuration() {
+        return duration;
+    }
+
+    public void setDuration(int duration) {
+        this.duration = duration;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -82,5 +93,6 @@ public class Book implements Parcelable {
         dest.writeString(title);
         dest.writeString(author);
         dest.writeString(coverURL);
+        dest.writeInt(duration);
     }
 }
