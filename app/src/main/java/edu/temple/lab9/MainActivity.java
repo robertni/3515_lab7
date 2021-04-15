@@ -49,6 +49,11 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         fragmentManager = getSupportFragmentManager();
 
+        fragmentManager
+                .beginTransaction()
+                .replace(R.id.controls, ControlFragment.newInstance(0, 0))
+                .commit();
+
         // check if there is a saved book and booklist
         if (savedInstanceState != null) {
             book = savedInstanceState.getParcelable(SAVED_BOOK);
