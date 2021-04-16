@@ -42,10 +42,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     RequestQueue requestQueue;
 
-    int connectionStatus = 0; // 0: stopped, 1: playing, 2: paused, 3: seekbar changed
+    int connectionStatus;
     AudiobookService.MediaControlBinder controlBinder;
     boolean connected = false;
-    int progress = 0;
+    int progress;
 
     private final String TAG_BOOKDETAILS = "book";
     private final String TAG_BOOKLIST = "booklist";
@@ -88,11 +88,11 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             AudiobookService.BookProgress bookProgress = (AudiobookService.BookProgress) msg.obj;
             if (bookProgress != null) {
                 progress = bookProgress.getProgress();
+                if (fragmentManager.findFragmentByTag(TAG_CFRAG) instanceof ControlFragment) {
+                    ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setProgress(progress, book.getDuration());
+                }
             }
-            if (fragmentManager.findFragmentByTag(TAG_CFRAG) != null) {
-                ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setProgress(progress, book.getDuration());
-            }
-            return true;
+            return false;
         }
     });
 
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             fragmentManager
                     .beginTransaction()
                     .replace(R.id.container_1, BookListFragment.newInstance(books), TAG_BOOKLIST)
-                    .replace(R.id.controls, ControlFragment.newInstance(book), TAG_CFRAG)
+                    .replace(R.id.controls, ControlFragment.newInstance(), TAG_CFRAG)
                     .commit();
         }
 
