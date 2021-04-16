@@ -13,46 +13,53 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link ControlFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class ControlFragment extends Fragment {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_ID = "param1";
-    private static final String ARG_DURATION = "param2";
+    private static final String ARG_BOOK = "param1";
 
-    private int id;
-    private int duration;
-    private String current;
+    private Book book;
+    private int status;
 
+    Context context;
+
+    TextView isPlaying;
+    TextView nowPlaying;
     ImageButton playButton;
     ImageButton pauseButton;
     ImageButton stopButton;
     SeekBar seekBar;
-    TextView nowPlaying;
+
+    ControlFragmentInterface controlFragmentInterface;
 
     public ControlFragment() {
         // Required empty public constructor
     }
 
-    public static ControlFragment newInstance(int id, int duration) {
+    public static ControlFragment newInstance() {
+        ControlFragment fragment = new ControlFragment();
+        return fragment;
+    }
+
+    public static ControlFragment newInstance(Book book) {
         ControlFragment fragment = new ControlFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_ID, id);
-        args.putInt(ARG_DURATION, duration);
+        args.putParcelable(ARG_BOOK, book);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        this.context = context;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            id = getArguments().getInt(ARG_ID);
-            duration = getArguments().getInt(ARG_DURATION);
+            book = getArguments().getParcelable(ARG_BOOK);
         }
     }
 
@@ -62,17 +69,87 @@ public class ControlFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_control, container, false);
 
-        // title of current song
-        nowPlaying = view.findViewById(R.id.current);
+        controlFragmentInterface = (ControlFragmentInterface) context;
 
-        // buttons
+        isPlaying = view.findViewById(R.id.isPlaying);
+        nowPlaying = view.findViewById(R.id.nowPlaying);
         playButton = view.findViewById(R.id.playButton);
         pauseButton = view.findViewById(R.id.pauseButton);
         stopButton = view.findViewById(R.id.stopButton);
-
-        // seekbar
         seekBar = view.findViewById(R.id.seekBar);
 
+
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                controlFragmentInterface.playAudio();
+            }
+        });
+
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                controlFragmentInterface.pauseAudio();
+            }
+        });
+
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                controlFragmentInterface.stopAudio();
+            }
+        });
+
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    controlFragmentInterface.changeAudioProgress(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+
         return view;
+    }
+
+    public void changeStatus(int status) {
+        this.status = status;
+        isPlaying.setText(status);
+    }
+
+    public int getStatus() {
+        return this.status;
+    }
+
+    public void displayBook(Book book) {
+        nowPlaying.setText(book.getTitle());
+    }
+
+    public void clearStatus() {
+        isPlaying.setText("");
+        nowPlaying.setText("");
+    }
+
+    public void setProgress(int progress, int duration) {
+        seekBar.setMax(duration);
+        seekBar.setProgress(progress);
+    }
+
+    interface ControlFragmentInterface {
+        void playAudio();
+        void pauseAudio();
+        void stopAudio();
+        void changeAudioProgress(int progress);
     }
 }
