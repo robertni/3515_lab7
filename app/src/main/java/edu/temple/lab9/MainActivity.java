@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
+            System.out.println("playConnection disconnected");
         }
     };
 
@@ -99,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
+            System.out.println("pauseConnection disconnected");
         }
     };
 
@@ -113,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
+            System.out.println("stopConnection disconnected");
         }
     };
 
@@ -126,16 +129,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-
+            connection = null;
+            System.out.println("seekConnection disconnected");
         }
     };
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Intent serviceIntent = new Intent(this, AudiobookService.class);
-        startService(serviceIntent);
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -200,6 +197,13 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 dialog.show(fragmentManager, "BookSearchActivity");
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent serviceIntent = new Intent(this, AudiobookService.class);
+        startService(serviceIntent);
     }
 
     @Override
