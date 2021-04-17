@@ -17,6 +17,7 @@ public class ControlFragment extends Fragment {
 
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_BOOK = "param1";
+    private static final String ARG_STATUS = "param2";
 
     private Book book;
     private int status;
@@ -41,10 +42,11 @@ public class ControlFragment extends Fragment {
         return fragment;
     }
 
-    public static ControlFragment newInstance(Book book) {
+    public static ControlFragment newInstance(Book book, int status) {
         ControlFragment fragment = new ControlFragment();
         Bundle args = new Bundle();
         args.putParcelable(ARG_BOOK, book);
+        args.putInt(ARG_STATUS, status);
         fragment.setArguments(args);
         return fragment;
     }
@@ -60,6 +62,7 @@ public class ControlFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             book = getArguments().getParcelable(ARG_BOOK);
+            status = getArguments().getInt(ARG_STATUS);
         }
     }
 
@@ -78,6 +81,11 @@ public class ControlFragment extends Fragment {
         stopButton = view.findViewById(R.id.stopButton);
         seekBar = view.findViewById(R.id.seekBar);
 
+
+        if (book != null && (status == R.string.playing || status == R.string.paused)) {
+            setStatus(status);
+            displayBook(book);
+        }
 
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -123,22 +131,13 @@ public class ControlFragment extends Fragment {
         return view;
     }
 
-    public void changeStatus(int status) {
+    public void setStatus(int status) {
         this.status = status;
         isPlaying.setText(status);
     }
 
-    public int getStatus() {
-        return this.status;
-    }
-
     public void displayBook(Book book) {
         nowPlaying.setText(book.getTitle());
-    }
-
-    public void clearStatus() {
-        isPlaying.setText("");
-        nowPlaying.setText("");
     }
 
     public void setProgress(int progress, int duration) {

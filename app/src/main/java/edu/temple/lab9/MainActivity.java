@@ -13,6 +13,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.MediaStore;
+import android.service.controls.Control;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -39,48 +41,23 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     FragmentManager fragmentManager;
     BookDetailsFragment bdFragment;
+    ControlFragment cFragment;
 
     RequestQueue requestQueue;
 
-    int connectionStatus;
     AudiobookService.MediaControlBinder controlBinder;
-    boolean connected = false;
-    int progress;
+    ServiceConnection connection = null;
+    int progress = 0;
+    int status = 0;
 
-    private final String TAG_BOOKDETAILS = "book";
-    private final String TAG_BOOKLIST = "booklist";
-    private final String TAG_CFRAG = "control fragment";
+    private final String TAG_BOOKDETAILS = "tag_book";
+    private final String TAG_BOOKLIST = "tag_booklist";
+    private final String TAG_CFRAG = "tag_control_fragment";
 
-    private final String SAVED_BOOK = "saved book";
-    private final String SAVED_BOOKLIST = "saved booklist";
-
-    ServiceConnection connection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            connected = true;
-            controlBinder = (AudiobookService.MediaControlBinder) service;
-            switch (connectionStatus) {
-                case 0: // playing
-                    controlBinder.play(book.getId());
-                    controlBinder.setProgressHandler(progressHandler);
-                    break;
-                case 1: // paused
-                    controlBinder.pause();
-                    break;
-                case 2: // stopped
-                    controlBinder.stop();
-                    break;
-                case 3: // changed seek bar progress
-                    controlBinder.seekTo(progress);
-                    break;
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            connected = false;
-        }
-    };
+    private final String SAVED_BOOK = "saved_book";
+    private final String SAVED_BOOKLIST = "saved_booklist";
+    private final String SAVED_PROGRESS = "saved_progress";
+    private final String SAVED_STATUS = "saved_status";
 
     Handler progressHandler = new Handler(new Handler.Callback() {
         @Override
@@ -88,13 +65,70 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             AudiobookService.BookProgress bookProgress = (AudiobookService.BookProgress) msg.obj;
             if (bookProgress != null) {
                 progress = bookProgress.getProgress();
-                if (fragmentManager.findFragmentByTag(TAG_CFRAG) instanceof ControlFragment) {
-                    ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setProgress(progress, book.getDuration());
-                }
+            }
+            if (fragmentManager.findFragmentByTag(TAG_CFRAG) != null) {
+                ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setProgress(progress, book.getDuration());
             }
             return false;
         }
     });
+
+    ServiceConnection playConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            connection = playConnection;
+            controlBinder = (AudiobookService.MediaControlBinder) service;
+            controlBinder.play(book.getId());
+            controlBinder.setProgressHandler(progressHandler);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            connection = null;
+        }
+    };
+
+    ServiceConnection pauseConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            connection = pauseConnection;
+            controlBinder = (AudiobookService.MediaControlBinder) service;
+            controlBinder.pause();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            connection = null;
+        }
+    };
+
+    ServiceConnection stopConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            connection = stopConnection;
+            controlBinder = (AudiobookService.MediaControlBinder) service;
+            controlBinder.stop();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            connection = null;
+        }
+    };
+
+    ServiceConnection seekConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            connection = seekConnection;
+            controlBinder = (AudiobookService.MediaControlBinder) service;
+            controlBinder.seekTo(progress);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
 
     @Override
     protected void onStart() {
@@ -119,8 +153,12 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         if (savedInstanceState != null) {
             book = savedInstanceState.getParcelable(SAVED_BOOK);
             books = savedInstanceState.getParcelable(SAVED_BOOKLIST);
+            progress = savedInstanceState.getInt(SAVED_PROGRESS);
+            status = savedInstanceState.getInt(SAVED_STATUS);
+            cFragment = ControlFragment.newInstance(book, status);
         } else {
             books = new BookList();
+            cFragment = ControlFragment.newInstance();
             getBookList();
         }
 
@@ -131,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             fragmentManager
                     .beginTransaction()
                     .replace(R.id.container_1, BookListFragment.newInstance(books), TAG_BOOKLIST)
-                    .replace(R.id.controls, ControlFragment.newInstance(), TAG_CFRAG)
+                    .replace(R.id.controls, cFragment, TAG_CFRAG)
                     .commit();
         }
 
@@ -143,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             fragmentManager
                     .beginTransaction()
                     .replace(R.id.container_2, bdFragment, TAG_BOOKDETAILS)
+                    .replace(R.id.controls, cFragment, TAG_CFRAG)
                     .commit();
         } else {
             if (book != null) {
@@ -247,65 +286,68 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     // ControlFragmentInterface
     @Override
     public void playAudio() {
-        connectionStatus = 0;
-        if (connected) {
-            unbindService(connection);
-        }
-
-        if (book == null) {
-            Toast.makeText(MainActivity.this, "You have not selected a book yet", Toast.LENGTH_SHORT).show();
+        if (book == null || book.getId() == 0) {
+            Toast.makeText(MainActivity.this, "You have not selected a book!", Toast.LENGTH_SHORT).show();
         } else {
-            ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).changeStatus(R.string.playing);
-            ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).displayBook(book);
+            if (connection != null) {
+                unbindService(connection);
+            }
+            status = R.string.playing;
+
+            ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
+            fragment.setStatus(status);
+            fragment.displayBook(book);
+
             Intent serviceIntent = new Intent(this, AudiobookService.class);
-            bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE);
+            bindService(serviceIntent, playConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
     @Override
     public void pauseAudio() {
-        ControlFragment cFragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
-        if (cFragment.getStatus() == R.string.paused) {
-            cFragment.changeStatus(R.string.playing);
-        } else if (cFragment.getStatus() == R.string.playing) {
-            cFragment.changeStatus(R.string.paused);
-        }
-
-        connectionStatus = 1;
-        if (connected) {
+        if (connection != null) {
             unbindService(connection);
         }
+        ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
+        if (status == R.string.paused) {
+            status = R.string.playing;
+            fragment.setStatus(status);
+        } else if (status == R.string.playing) {
+            status = R.string.paused;
+            fragment.setStatus(status);
+        }
+
         Intent serviceIntent = new Intent(this, AudiobookService.class);
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE);
+        bindService(serviceIntent, pauseConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     public void stopAudio() {
-        ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).changeStatus(R.string.stopped);
-        connectionStatus = 2;
-        if (connected) {
+        if (connection != null) {
             unbindService(connection);
         }
+        if (status == R.string.playing || status == R.string.paused) {
+            status = R.string.stopped;
+            ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setStatus(status);
+        }
         Intent serviceIntent = new Intent(this, AudiobookService.class);
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE);
+        bindService(serviceIntent, stopConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     public void changeAudioProgress(int progress) {
-        connectionStatus = 3;
-        if (connected) {
+        if (connection != null) {
             unbindService(connection);
         }
         this.progress = progress;
         Intent serviceIntent = new Intent(this, AudiobookService.class);
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE);
+        bindService(serviceIntent, seekConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
         book = null;
-        ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).clearStatus();
     }
 
     @Override
@@ -313,5 +355,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         super.onSaveInstanceState(outState);
         outState.putParcelable(SAVED_BOOK, book);
         outState.putParcelable(SAVED_BOOKLIST, books);
+        outState.putInt(SAVED_PROGRESS, progress);
+        outState.putInt(SAVED_STATUS, status);
     }
 }
