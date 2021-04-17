@@ -85,7 +85,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-
         }
     };
 
@@ -98,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-
         }
     };
 
@@ -129,13 +127,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     };
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        Intent serviceIntent = new Intent(this, AudiobookService.class);
-        startService(serviceIntent);
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -153,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             books = savedInstanceState.getParcelable(SAVED_BOOKLIST);
             progress = savedInstanceState.getInt(SAVED_PROGRESS);
             status = savedInstanceState.getInt(SAVED_STATUS);
-            cFragment = ControlFragment.newInstance(book, status);
+            cFragment = ControlFragment.newInstance(book, status, progress);
         } else {
             books = new BookList();
             cFragment = ControlFragment.newInstance();
@@ -198,6 +189,13 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 dialog.show(fragmentManager, "BookSearchActivity");
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent serviceIntent = new Intent(this, AudiobookService.class);
+        startService(serviceIntent);
     }
 
     @Override

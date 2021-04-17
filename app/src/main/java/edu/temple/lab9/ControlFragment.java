@@ -18,9 +18,11 @@ public class ControlFragment extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_BOOK = "param1";
     private static final String ARG_STATUS = "param2";
+    private static final String ARG_PROGRESS = "params3";
 
     private Book book;
     private int status;
+    private int progress;
 
     Context context;
 
@@ -42,11 +44,12 @@ public class ControlFragment extends Fragment {
         return fragment;
     }
 
-    public static ControlFragment newInstance(Book book, int status) {
+    public static ControlFragment newInstance(Book book, int status, int progress) {
         ControlFragment fragment = new ControlFragment();
         Bundle args = new Bundle();
         args.putParcelable(ARG_BOOK, book);
         args.putInt(ARG_STATUS, status);
+        args.putInt(ARG_PROGRESS, progress);
         fragment.setArguments(args);
         return fragment;
     }
@@ -63,6 +66,7 @@ public class ControlFragment extends Fragment {
         if (getArguments() != null) {
             book = getArguments().getParcelable(ARG_BOOK);
             status = getArguments().getInt(ARG_STATUS);
+            progress = getArguments().getInt(ARG_PROGRESS);
         }
     }
 
@@ -85,6 +89,9 @@ public class ControlFragment extends Fragment {
         if (book != null && (status == R.string.playing || status == R.string.paused)) {
             setStatus(status);
             displayBook(book);
+            if (progress > 0) {
+                setProgress(progress, book.getDuration());
+            }
         }
 
         playButton.setOnClickListener(new View.OnClickListener() {
