@@ -78,14 +78,17 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         public void onServiceConnected(ComponentName name, IBinder service) {
             connection = playConnection;
             controlBinder = (AudiobookService.MediaControlBinder) service;
-            controlBinder.play(book.getId());
+            if (progress > 0) {
+                controlBinder.play(book.getId(), progress);
+            } else {
+                controlBinder.play(book.getId());
+            }
             controlBinder.setProgressHandler(progressHandler);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
-            System.out.println("playConnection disconnected");
         }
     };
 
@@ -100,7 +103,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
-            System.out.println("pauseConnection disconnected");
         }
     };
 
@@ -115,7 +117,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
-            System.out.println("stopConnection disconnected");
         }
     };
 
@@ -130,7 +131,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         @Override
         public void onServiceDisconnected(ComponentName name) {
             connection = null;
-            System.out.println("seekConnection disconnected");
         }
     };
 
@@ -301,7 +301,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
             fragment.setStatus(status);
             fragment.displayBook(book);
-
             Intent serviceIntent = new Intent(this, AudiobookService.class);
             bindService(serviceIntent, playConnection, Context.BIND_AUTO_CREATE);
         }
