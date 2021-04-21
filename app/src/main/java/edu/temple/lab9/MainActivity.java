@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     BookList books;
     Book book;
+    Book playingBook;
     boolean landscape;
 
     FragmentManager fragmentManager;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     private final String TAG_CFRAG = "tag_control_fragment";
 
     private final String SAVED_BOOK = "saved_book";
+    private final String SAVED_BOOK2 = "saved_book2";
     private final String SAVED_BOOKLIST = "saved_booklist";
     private final String SAVED_PROGRESS = "saved_progress";
     private final String SAVED_STATUS = "saved_status";
@@ -68,8 +70,8 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 progress = bookProgress.getProgress();
             }
             Fragment fragment = fragmentManager.findFragmentByTag(TAG_CFRAG);
-            if (fragment != null && fragment instanceof ControlFragment) {
-                ((ControlFragment) fragment).setProgress(progress, book.getDuration());
+            if (fragment != null && fragment instanceof ControlFragment && playingBook != null) {
+                ((ControlFragment) fragment).setProgress(progress, playingBook.getDuration());
             }
             return false;
         }
@@ -93,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         public void onServiceConnected(ComponentName name, IBinder service) {
             controlBinder = (AudiobookService.MediaControlBinder) service;
             controlBinder.pause();
+            controlBinder.setProgressHandler(progressHandler);
         }
 
         @Override
@@ -105,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         public void onServiceConnected(ComponentName name, IBinder service) {
             controlBinder = (AudiobookService.MediaControlBinder) service;
             controlBinder.stop();
+            controlBinder.setProgressHandler(progressHandler);
         }
 
         @Override
@@ -118,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         public void onServiceConnected(ComponentName name, IBinder service) {
             controlBinder = (AudiobookService.MediaControlBinder) service;
             controlBinder.seekTo(progress);
+            controlBinder.setProgressHandler(progressHandler);
         }
 
         @Override
@@ -141,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         // check if there is a saved book and booklist
         if (savedInstanceState != null) {
             book = savedInstanceState.getParcelable(SAVED_BOOK);
+            playingBook = savedInstanceState.getParcelable(SAVED_BOOK2);
             books = savedInstanceState.getParcelable(SAVED_BOOKLIST);
             progress = savedInstanceState.getInt(SAVED_PROGRESS);
             status = savedInstanceState.getInt(SAVED_STATUS);
@@ -288,6 +294,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             if (connection != null) {
                 unbindService(connection);
             }
+            playingBook = book;
             status = R.string.playing;
             ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
             fragment.setStatus(status);
@@ -354,6 +361,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(SAVED_BOOK, book);
+        outState.putParcelable(SAVED_BOOK2, playingBook);
         outState.putParcelable(SAVED_BOOKLIST, books);
         outState.putInt(SAVED_PROGRESS, progress);
         outState.putInt(SAVED_STATUS, status);
