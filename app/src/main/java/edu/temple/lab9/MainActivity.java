@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -30,6 +31,8 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.File;
 
 import edu.temple.audiobookplayer.AudiobookService;
 
@@ -53,6 +56,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     int progress = 0;
     int status = 0;
 
+    SharedPreferences preferences;
+    String filename;
+    File file;
+
     private final String TAG_BOOKDETAILS = "tag_book";
     private final String TAG_BOOKLIST = "tag_booklist";
     private final String TAG_CFRAG = "tag_control_fragment";
@@ -66,13 +73,9 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     Handler progressHandler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(@NonNull Message msg) {
-            AudiobookService.BookProgress bookProgress = (AudiobookService.BookProgress) msg.obj;
-            if (bookProgress != null) {
-                progress = bookProgress.getProgress();
-            }
-            Fragment fragment = fragmentManager.findFragmentByTag(TAG_CFRAG);
-            if (fragment != null && fragment instanceof ControlFragment && playingBook != null) {
-                ((ControlFragment) fragment).setProgress(progress, playingBook.getDuration());
+            if (msg.obj != null && playingBook != null) {
+                progress = ((AudiobookService.BookProgress) msg.obj).getProgress();
+                cFragment.setProgress(progress, playingBook.getDuration());
             }
             return false;
         }
@@ -97,6 +100,12 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        file = new File(getFilesDir(), filename);
+
+
+        serviceIntent = new Intent(this, AudiobookService.class);
+        bindService(serviceIntent, connection, BIND_AUTO_CREATE);
+
         Button button = findViewById(R.id.button);
 
         // check if landscape/tablet
@@ -111,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             books = savedInstanceState.getParcelable(SAVED_BOOKLIST);
             progress = savedInstanceState.getInt(SAVED_PROGRESS);
             status = savedInstanceState.getInt(SAVED_STATUS);
-            cFragment = ControlFragment.newInstance(book, status, progress);
+            cFragment = ControlFragment.newInstance(playingBook, status, progress);
         } else {
             books = new BookList();
             cFragment = ControlFragment.newInstance();
@@ -156,18 +165,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                 dialog.show(fragmentManager, "BookSearchActivity");
             }
         });
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        serviceIntent = new Intent(this, AudiobookService.class);
-        bindService(serviceIntent, connection, BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
     }
 
     private void getBookList() {
@@ -249,22 +246,29 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     // ControlFragmentInterface
     @Override
     public void playAudio() {
-        if (book == null || book.getId() == 0) {
+        if (playingBook == null && (book == null || book.getId() == 0)) {
             Toast.makeText(MainActivity.this, "You have not selected a book!", Toast.LENGTH_SHORT).show();
         } else {
             if (connected) {
                 if (playingBook == book) {
-                    if (status == R.string.paused) {
-                        controlBinder.pause();
+                    switch(status) {
+                        case R.string.paused:
+                            controlBinder.pause();
+                            break;
+                        case R.string.stopped:
+                            controlBinder.play(book.getId());
+                            break;
                     }
-                } else if (playingBook != book) {
+                } else if (playingBook != null && book == null) {
+                    controlBinder.play(playingBook.getId());
+                } else {
                     controlBinder.play(book.getId());
                     playingBook = book;
                 }
                 status = R.string.playing;
                 ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
                 fragment.setStatus(status);
-                fragment.displayBook(book);
+                fragment.displayBook(playingBook);
             }
         }
         startService(serviceIntent);
@@ -324,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         unbindService(connection);
+        super.onDestroy();
     }
 }
