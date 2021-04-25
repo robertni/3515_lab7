@@ -125,7 +125,24 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             books = new BookList();
             cFragment = ControlFragment.newInstance();
 
-            // look in local storage for search term
+            // search storage for last played book
+            boolean isPlaying = preference.getBoolean("isPlaying", false);
+            if (isPlaying) {
+                playingBook = new Book(
+                        preference.getInt("bookId", 0),
+                        preference.getString("bookTitle", "bookTitle"),
+                        preference.getString("bookAuthor", "bookAuthor"),
+                        preference.getString("bookCover", "bookCover"),
+                        preference.getInt("bookDuration", 0)
+                );
+                status = R.string.paused;
+                progress = preference.getInt(playingBook.getTitle(), 0);
+                cFragment = ControlFragment.newInstance(playingBook, status, progress);
+            } else {
+                cFragment = ControlFragment.newInstance();
+            }
+
+            // search storage for last searched book
             boolean search = preference.getBoolean("search", false);
             if (search) { // search provided
                 String lastSearch = preference.getString("lastSearch", "lastSearch");
@@ -347,7 +364,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                     file = new File(getFilesDir(), filename);
 
                     if (status == R.string.paused) {
-                        controlBinder.pause();
+                        controlBinder.play(file, progress);
                     } else if (status == R.string.stopped) {
                         controlBinder.play(file);
                     }
@@ -403,6 +420,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             if (status == R.string.playing || status == R.string.paused) {
                 status = R.string.stopped;
                 ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setStatus(status);
+                ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setProgress(0, 1);
             }
         }
         stopService(serviceIntent);
@@ -433,7 +451,30 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        SharedPreferences.Editor editor = preference.edit();
+        if (playingBook != null && status != R.string.stopped) {
+            editor.putBoolean("isPlaying", true);
+            editor.putInt("bookId", playingBook.getId());
+            editor.putString("bookTitle", playingBook.getTitle());
+            editor.putString("bookAuthor", playingBook.getAuthor());
+            editor.putString("bookCover", playingBook.getCoverURL());
+            editor.putInt("bookDuration", playingBook.getDuration());
+            if (progress > 0 && progress < playingBook.getDuration()) {
+                editor.putInt(playingBook.getTitle(), progress);
+            } else {
+                editor.remove(playingBook.getTitle());
+            }
+        } else {
+            editor.remove("isPlaying");
+        }
+        editor.apply();
+    }
+
+    @Override
     protected void onDestroy() {
+        stopService(serviceIntent);
         unbindService(connection);
         super.onDestroy();
     }

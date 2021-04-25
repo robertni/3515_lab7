@@ -58,7 +58,6 @@ public class BookSearchActivity extends DialogFragment {
                         }
                         editor.apply();
 
-
                         String url = "https://kamorris.com/lab/cis3515/search.php?term=" + editText.getText().toString();
                         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
                             @Override
@@ -112,7 +111,7 @@ public class BookSearchActivity extends DialogFragment {
     }
 
     public interface BSListenerInterface {
-        public void onDialogPositiveClick(DialogFragment dialog, BookList books);
-        public void onDialogNegativeClick(DialogFragment dialog);
+         void onDialogPositiveClick(DialogFragment dialog, BookList books);
+         void onDialogNegativeClick(DialogFragment dialog);
     }
 }
