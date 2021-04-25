@@ -1,4 +1,4 @@
-package edu.temple.lab9;
+package edu.temple.lab10;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -40,8 +40,7 @@ public class ControlFragment extends Fragment {
     }
 
     public static ControlFragment newInstance() {
-        ControlFragment fragment = new ControlFragment();
-        return fragment;
+        return new ControlFragment();
     }
 
     public static ControlFragment newInstance(Book book, int status, int progress) {

@@ -1,4 +1,4 @@
-package edu.temple.lab9;
+package edu.temple.lab10;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -352,7 +352,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                                     input.close();
 
                                     System.out.println("Download finished.");
-                                    return;
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }

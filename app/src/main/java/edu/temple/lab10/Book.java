@@ -1,10 +1,7 @@
-package edu.temple.lab9;
+package edu.temple.lab10;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class Book implements Parcelable {
 
