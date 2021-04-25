@@ -352,7 +352,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                                     input.close();
 
                                     System.out.println("Download finished.");
-
+                                    return;
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
