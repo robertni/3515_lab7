@@ -32,7 +32,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 
 import edu.temple.audiobookplayer.AudiobookService;
 
@@ -56,7 +65,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     int progress = 0;
     int status = 0;
 
-    SharedPreferences preferences;
     String filename;
     File file;
 
@@ -99,9 +107,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        file = new File(getFilesDir(), filename);
-
 
         serviceIntent = new Intent(this, AudiobookService.class);
         bindService(serviceIntent, connection, BIND_AUTO_CREATE);
@@ -250,19 +255,63 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             Toast.makeText(MainActivity.this, "You have not selected a book!", Toast.LENGTH_SHORT).show();
         } else {
             if (connected) {
-                if (playingBook == book) {
+                if (playingBook == book) { // currently playing book is same as selected book
+                    filename = playingBook.getTitle().replace(" ", "_");
+                    file = new File(getFilesDir(), filename);
                     switch(status) {
                         case R.string.paused:
                             controlBinder.pause();
                             break;
                         case R.string.stopped:
-                            controlBinder.play(book.getId());
+                            System.out.println("File exists - (line 266 in MainActivity)");
+                            controlBinder.play(file);
                             break;
                     }
-                } else if (playingBook != null && book == null) {
-                    controlBinder.play(playingBook.getId());
-                } else {
-                    controlBinder.play(book.getId());
+                } else if (playingBook != null && book == null) { // book not selected, but a book was played previously
+                    filename = playingBook.getTitle().replace(" ", "_");
+                    file = new File(getFilesDir(), filename);
+                    System.out.println("File exists - (line 273 in MainActivity)");
+                    controlBinder.play(file);
+                } else { // book not played, but selected
+                    filename = book.getTitle().replace(" ", "_");
+                    file = new File(getFilesDir(), filename);
+
+                    if (file.exists()) {
+                        System.out.println("File exists - (line 280 in MainActivity)");
+                        controlBinder.play(file);
+                    } else {
+                        System.out.println("File does not exist - (line 283 in MainActivity)");
+                        controlBinder.play(book.getId());
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                try {
+                                    URL url = new URL("https://kamorris.com/lab/audlib/download.php?id=" + book.getId());
+                                    URLConnection conn = url.openConnection();
+                                    conn.connect();
+
+                                    System.out.println("Downloading book from " + url.toString());
+
+                                    BufferedInputStream input = new BufferedInputStream(url.openStream());
+                                    FileOutputStream output = new FileOutputStream(file);
+
+                                    byte[] data = new byte[1024];
+                                    int count;
+                                    while ((count = input.read(data)) > 0) {
+                                        output.write(data, 0, count);
+                                    }
+
+                                    output.flush();
+                                    output.close();
+                                    input.close();
+
+                                    System.out.println("Finished downloading - closing connection");
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }.start();
+                    }
                     playingBook = book;
                 }
                 status = R.string.playing;
