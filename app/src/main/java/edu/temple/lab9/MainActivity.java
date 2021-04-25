@@ -265,8 +265,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                         if (playingBook != null) {
                             SharedPreferences.Editor editor = preference.edit();
                             if (progress > 10) {
+                                System.out.println("Saving progress");
                                 editor.putInt(playingBook.getTitle(), progress - 10);
                             } else {
+                                System.out.println("Progress less than 10, will start from 0");
                                 editor.remove(playingBook.getTitle());
                             }
                             editor.apply();
@@ -274,11 +276,12 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
                         // play the new book
                         if (file.exists()) {
-                            System.out.println("File exists, playing from file");
                             int savedProgress = preference.getInt(book.getTitle(), 0);
                             if (savedProgress > 0) {
+                                System.out.println("File exists - progress = " + savedProgress);
                                 controlBinder.play(file, savedProgress);
                             } else {
+                                System.out.println("File exists - playing from beginning");
                                 controlBinder.play(file);
                             }
                         } else {
@@ -333,9 +336,6 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         startService(serviceIntent);
     }
 
-
-
-
     @Override
     public void pauseAudio() {
         if (connected) {
@@ -343,8 +343,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
             SharedPreferences.Editor editor = preference.edit();
             if (progress > 10) {
+                System.out.println("Saving progress");
                 editor.putInt(playingBook.getTitle(), progress - 10);
             } else {
+                System.out.println("Progress less than 10, will start from 0");
                 editor.remove(playingBook.getTitle());
             }
             editor.apply();
@@ -366,6 +368,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
             progress = 0;
 
             if (playingBook != null) {
+                System.out.println("Stop called - removing progress for " + playingBook.getTitle());
                 controlBinder.stop();
                 SharedPreferences.Editor editor = preference.edit();
                 editor.remove(playingBook.getTitle());
