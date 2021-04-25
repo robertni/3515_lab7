@@ -31,13 +31,9 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.Buffer;
 
 import edu.temple.audiobookplayer.AudiobookService;
 
@@ -256,26 +252,37 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         } else {
             if (connected) {
                 if (book != null) {
-                    System.out.println("book != null");
                     filename = book.getTitle();
                     file = new File(getFilesDir(), filename);
                     if (book == playingBook) {
-                        System.out.println("book == playingBook");
-                        switch (status) {
-                            case R.string.paused:
-                                controlBinder.pause();
-                                break;
-                            case R.string.stopped:
-                                controlBinder.play(file);
-                                break;
+                        if (status == R.string.paused) {
+                            controlBinder.pause();
+                        } else if (status == R.string.stopped) {
+                            controlBinder.play(file);
                         }
                     } else { // book not playingBook
-                        System.out.println("book != playingBook");
+                        // save progress of playing book
+                        if (playingBook != null) {
+                            SharedPreferences.Editor editor = preference.edit();
+                            if (progress > 10) {
+                                editor.putInt(playingBook.getTitle(), progress - 10);
+                            } else {
+                                editor.remove(playingBook.getTitle());
+                            }
+                            editor.apply();
+                        }
+
+                        // play the new book
                         if (file.exists()) {
-                            System.out.println("File exists. Playing from existing file");
-                            controlBinder.play(file);
+                            System.out.println("File exists, playing from file");
+                            int savedProgress = preference.getInt(book.getTitle(), 0);
+                            if (savedProgress > 0) {
+                                controlBinder.play(file, savedProgress);
+                            } else {
+                                controlBinder.play(file);
+                            }
                         } else {
-                            System.out.println("File does not exist. Stream book");
+                            System.out.println("Streaming book and downloading in background");
                             controlBinder.play(book.getId());
                             new Thread(() -> {
                                 try {
@@ -298,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                                     output.close();
                                     input.close();
 
-                                    System.out.println("Download finished. Closing IOStream");
+                                    System.out.println("Download finished.");
 
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -311,13 +318,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                     filename = playingBook.getTitle();
                     file = new File(getFilesDir(), filename);
 
-                    switch(status) {
-                        case R.string.paused:
-                            controlBinder.pause();
-                            break;
-                        case R.string.stopped:
-                            controlBinder.play(file);
-                            break;
+                    if (status == R.string.paused) {
+                        controlBinder.pause();
+                    } else if (status == R.string.stopped) {
+                        controlBinder.play(file);
                     }
                 }
                 status = R.string.playing;
@@ -337,6 +341,14 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         if (connected) {
             controlBinder.pause();
 
+            SharedPreferences.Editor editor = preference.edit();
+            if (progress > 10) {
+                editor.putInt(playingBook.getTitle(), progress - 10);
+            } else {
+                editor.remove(playingBook.getTitle());
+            }
+            editor.apply();
+
             ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
             if (status == R.string.paused) {
                 status = R.string.playing;
@@ -351,8 +363,14 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     @Override
     public void stopAudio() {
         if (connected) {
-            controlBinder.stop();
             progress = 0;
+
+            if (playingBook != null) {
+                controlBinder.stop();
+                SharedPreferences.Editor editor = preference.edit();
+                editor.remove(playingBook.getTitle());
+                editor.apply();
+            }
 
             if (status == R.string.playing || status == R.string.paused) {
                 status = R.string.stopped;
