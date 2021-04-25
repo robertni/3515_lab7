@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -46,6 +47,18 @@ public class BookSearchActivity extends DialogFragment {
                 .setPositiveButton(R.string.search, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        // save search last search term
+                        SharedPreferences preference = getActivity().getPreferences(Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = preference.edit();
+                        if (editText.getText().toString().isEmpty()) {
+                            editor.putBoolean("search", false);
+                        } else {
+                            editor.putBoolean("search", true);
+                            editor.putString("lastSearch", editText.getText().toString());
+                        }
+                        editor.apply();
+
+
                         String url = "https://kamorris.com/lab/cis3515/search.php?term=" + editText.getText().toString();
                         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
                             @Override

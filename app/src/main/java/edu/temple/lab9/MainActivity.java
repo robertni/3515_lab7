@@ -124,18 +124,22 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         } else {
             books = new BookList();
             cFragment = ControlFragment.newInstance();
-            getBookList();
+
+            // look in local storage for search term
+            boolean search = preference.getBoolean("search", false);
+            if (search) { // search provided
+                String lastSearch = preference.getString("lastSearch", "lastSearch");
+                getBookList(lastSearch);
+            } else {
+                getBookList();
+            }
         }
 
         // display BookList in container 1
         if (fragmentManager.findFragmentById(R.id.container_1) instanceof BookDetailsFragment) {
             fragmentManager.popBackStack();
         } else {
-            fragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container_1, BookListFragment.newInstance(books), TAG_BOOKLIST)
-                    .replace(R.id.controls, cFragment, TAG_CFRAG)
-                    .commit();
+            fragmentManager.beginTransaction().replace(R.id.container_1, BookListFragment.newInstance(books), TAG_BOOKLIST).replace(R.id.controls, cFragment, TAG_CFRAG).commit();
         }
 
         // if book == null is true, it will create a new BookDetailsFragment
@@ -143,18 +147,10 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         bdFragment = (book == null) ? new BookDetailsFragment() : BookDetailsFragment.newInstance(book);
 
         if (landscape) {
-            fragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container_2, bdFragment, TAG_BOOKDETAILS)
-                    .replace(R.id.controls, cFragment, TAG_CFRAG)
-                    .commit();
+            fragmentManager.beginTransaction().replace(R.id.container_2, bdFragment, TAG_BOOKDETAILS).replace(R.id.controls, cFragment, TAG_CFRAG).commit();
         } else {
             if (book != null) {
-                fragmentManager
-                        .beginTransaction()
-                        .replace(R.id.container_1, bdFragment, TAG_BOOKDETAILS)
-                        .addToBackStack(null)
-                        .commit();
+                fragmentManager.beginTransaction().replace(R.id.container_1, bdFragment, TAG_BOOKDETAILS).addToBackStack(null).commit();
             }
         }
 
@@ -170,6 +166,39 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     private void getBookList() {
         BookList books = new BookList();
         String url = "https://kamorris.com/lab/cis3515/search.php?term=";
+        requestQueue = Volley.newRequestQueue(this);
+
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+                for (int i = 0; i < response.length(); i++) {
+                    try {
+                        JSONObject jsonObject = response.getJSONObject(i);
+                        books.addBook(new Book(
+                                Integer.parseInt(jsonObject.getString("id")),
+                                jsonObject.getString("title"),
+                                jsonObject.getString("author"),
+                                jsonObject.getString("cover_url"),
+                                Integer.parseInt(jsonObject.getString("duration"))
+                        ));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                setBookList(books);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                System.out.println(error);
+            }
+        });
+        requestQueue.add(jsonArrayRequest);
+    }
+
+    private void getBookList(String lastSearch) {
+        BookList books = new BookList();
+        String url = "https://kamorris.com/lab/cis3515/search.php?term=" + lastSearch;
         requestQueue = Volley.newRequestQueue(this);
 
         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
@@ -222,11 +251,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         if (landscape) {
             bdFragment.displayBook(book);
         } else {
-            fragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container_1, BookDetailsFragment.newInstance(book), TAG_BOOKDETAILS)
-                    .addToBackStack(null)
-                    .commit();
+            fragmentManager.beginTransaction().replace(R.id.container_1, BookDetailsFragment.newInstance(book), TAG_BOOKDETAILS).addToBackStack(null).commit();
         }
     }
 
