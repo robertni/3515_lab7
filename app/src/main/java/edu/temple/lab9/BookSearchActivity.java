@@ -97,8 +97,6 @@ public class BookSearchActivity extends DialogFragment {
         return builder.create();
     }
 
-
-
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);

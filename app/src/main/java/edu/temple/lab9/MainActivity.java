@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -352,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
                                     System.out.println("Download finished.");
 
-                                } catch (Exception e) {
+                                } catch (IOException e) {
                                     e.printStackTrace();
                                 }
                             }).start();
@@ -474,8 +475,8 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
 
     @Override
     protected void onDestroy() {
+        super.onDestroy();
         stopService(serviceIntent);
         unbindService(connection);
-        super.onDestroy();
     }
 }
