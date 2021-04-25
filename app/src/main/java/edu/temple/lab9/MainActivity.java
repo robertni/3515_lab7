@@ -3,7 +3,6 @@ package edu.temple.lab9;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import android.content.ComponentName;
@@ -15,8 +14,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.provider.MediaStore;
-import android.service.controls.Control;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -34,14 +31,13 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.Buffer;
 
 import edu.temple.audiobookplayer.AudiobookService;
 
@@ -65,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     int progress = 0;
     int status = 0;
 
+    SharedPreferences preference;
     String filename;
     File file;
 
@@ -107,6 +104,8 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        preference = getPreferences(Context.MODE_PRIVATE);
 
         serviceIntent = new Intent(this, AudiobookService.class);
         bindService(serviceIntent, connection, BIND_AUTO_CREATE);
@@ -251,46 +250,40 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
     // ControlFragmentInterface
     @Override
     public void playAudio() {
+        // playingBook and book are null
         if (playingBook == null && (book == null || book.getId() == 0)) {
-            Toast.makeText(MainActivity.this, "You have not selected a book!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "You have not selected a book yet", Toast.LENGTH_SHORT).show();
         } else {
             if (connected) {
-                if (playingBook == book) { // currently playing book is same as selected book
-                    filename = playingBook.getTitle().replace(" ", "_");
+                if (book != null) {
+                    System.out.println("book != null");
+                    filename = book.getTitle();
                     file = new File(getFilesDir(), filename);
-                    switch(status) {
-                        case R.string.paused:
-                            controlBinder.pause();
-                            break;
-                        case R.string.stopped:
-                            System.out.println("File exists - (line 266 in MainActivity)");
+                    if (book == playingBook) {
+                        System.out.println("book == playingBook");
+                        switch (status) {
+                            case R.string.paused:
+                                controlBinder.pause();
+                                break;
+                            case R.string.stopped:
+                                controlBinder.play(file);
+                                break;
+                        }
+                    } else { // book not playingBook
+                        System.out.println("book != playingBook");
+                        if (file.exists()) {
+                            System.out.println("File exists. Playing from existing file");
                             controlBinder.play(file);
-                            break;
-                    }
-                } else if (playingBook != null && book == null) { // book not selected, but a book was played previously
-                    filename = playingBook.getTitle().replace(" ", "_");
-                    file = new File(getFilesDir(), filename);
-                    System.out.println("File exists - (line 273 in MainActivity)");
-                    controlBinder.play(file);
-                } else { // book not played, but selected
-                    filename = book.getTitle().replace(" ", "_");
-                    file = new File(getFilesDir(), filename);
-
-                    if (file.exists()) {
-                        System.out.println("File exists - (line 280 in MainActivity)");
-                        controlBinder.play(file);
-                    } else {
-                        System.out.println("File does not exist - (line 283 in MainActivity)");
-                        controlBinder.play(book.getId());
-                        new Thread() {
-                            @Override
-                            public void run() {
+                        } else {
+                            System.out.println("File does not exist. Stream book");
+                            controlBinder.play(book.getId());
+                            new Thread(() -> {
                                 try {
                                     URL url = new URL("https://kamorris.com/lab/audlib/download.php?id=" + book.getId());
                                     URLConnection conn = url.openConnection();
                                     conn.connect();
 
-                                    System.out.println("Downloading book from " + url.toString());
+                                    System.out.println("Downloading from " + url.toString());
 
                                     BufferedInputStream input = new BufferedInputStream(url.openStream());
                                     FileOutputStream output = new FileOutputStream(file);
@@ -305,14 +298,27 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
                                     output.close();
                                     input.close();
 
-                                    System.out.println("Finished downloading - closing connection");
+                                    System.out.println("Download finished. Closing IOStream");
+
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                            }
-                        }.start();
+                            }).start();
+                        }
                     }
                     playingBook = book;
+                } else { // book is null; use playingBook
+                    filename = playingBook.getTitle();
+                    file = new File(getFilesDir(), filename);
+
+                    switch(status) {
+                        case R.string.paused:
+                            controlBinder.pause();
+                            break;
+                        case R.string.stopped:
+                            controlBinder.play(file);
+                            break;
+                    }
                 }
                 status = R.string.playing;
                 ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
@@ -323,10 +329,14 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         startService(serviceIntent);
     }
 
+
+
+
     @Override
     public void pauseAudio() {
         if (connected) {
             controlBinder.pause();
+
             ControlFragment fragment = (ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG);
             if (status == R.string.paused) {
                 status = R.string.playing;
@@ -343,6 +353,7 @@ public class MainActivity extends AppCompatActivity implements BookListFragment.
         if (connected) {
             controlBinder.stop();
             progress = 0;
+
             if (status == R.string.playing || status == R.string.paused) {
                 status = R.string.stopped;
                 ((ControlFragment) fragmentManager.findFragmentByTag(TAG_CFRAG)).setStatus(status);
